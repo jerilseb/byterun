@@ -30,7 +30,7 @@ Ideas for a Python VM written in Python:
 2.  faked threading.  run a set number of byte codes, then switch to a second 'Thread' and run the byte codes, repeat.
 """
 
-import operator, dis, new, inspect, copy, sys
+import operator, dis, new, inspect, copy, sys, re
 CO_GENERATOR = 32 # flag for "this code uses yield"
 
 class Cell:
@@ -258,6 +258,11 @@ class VirtualMachine:
         self._stack.append(thing)
 
     def loadCode(self, code, args = [], kw = {}, f_globals = None, f_locals = None):
+        real_stdout = sys.stdout
+        file_name = re.sub('[^A-Za-z0-9]+', '', code.co_name)
+        sys.stdout = open(file_name, 'w')
+        dis.dis(code)
+        sys.stdout = real_stdout
         if f_globals:
             f_globals = f_globals
             if not f_locals:
@@ -697,7 +702,6 @@ class VirtualMachine:
 
 if __name__ == "__main__":
     trialCode = """
-
 # class Foo:
 #     x = 1
 #     def __init__(self, y):
@@ -706,21 +710,22 @@ if __name__ == "__main__":
 #         print "Hello there"
 #         return self.x + self.y + z
 
+temp = 8 + 32
+temp = temp * 3
+print temp
+
 def sum():
-    x = 32
-    y = 77
-    return x + y
+    a = [3,5,2]
+    sum = 0
+    for val in a:
+        sum = sum + val
+    return sum
 
 val = sum()
 print val
-# f = Foo(2)
-# b = f.add(44)
-# print b
 
 """
-
     codeObject = compile(trialCode, '<input>', 'exec')
-    dis.dis(codeObject)
     vm = VirtualMachine()
     vm.loadCode(codeObject)
     vm.run()
