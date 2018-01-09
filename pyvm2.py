@@ -30,7 +30,7 @@ Ideas for a Python VM written in Python:
 2.  faked threading.  run a set number of byte codes, then switch to a second 'Thread' and run the byte codes, repeat.
 """
 
-import operator, dis, new, inspect, copy, sys, re
+import operator, dis, new, inspect, copy, sys, re, os
 CO_GENERATOR = 32 # flag for "this code uses yield"
 
 class Cell:
@@ -259,7 +259,7 @@ class VirtualMachine:
 
     def loadCode(self, code, args = [], kw = {}, f_globals = None, f_locals = None):
         real_stdout = sys.stdout
-        file_name = re.sub('[^A-Za-z0-9]+', '', code.co_name)
+        file_name = re.sub('[^A-Za-z0-9]+', '', code.co_name) + '.byte'
         sys.stdout = open(file_name, 'w')
         dis.dis(code)
         sys.stdout = real_stdout
@@ -700,58 +700,44 @@ class VirtualMachine:
             self.pop()
             self.frame().f_lasti = jump
 
+
 if __name__ == "__main__":
-    trialCode = """
-# class Foo:
-#     x = 1
-#     def __init__(self, y):
-#         self.y = y
-#     def add(self, z):
-#         print "Hello there"
-#         return self.x + self.y + z
+    f = open('input.py','r')
+    trialCode = f.read()
+    f.close()
 
-temp = 8 + 32
-temp = temp * 3
-print temp
-
-def sum():
-    a = [3,5,2]
-    sum = 0
-    for val in a:
-        sum = sum + val
-    return sum
-
-val = sum()
-print val
-
-"""
+    # Remove the bytecode files
+    for f in os.listdir('.'):
+        if f.endswith('.byte'):
+            os.remove(f)
+            
     codeObject = compile(trialCode, '<input>', 'exec')
     vm = VirtualMachine()
     vm.loadCode(codeObject)
     vm.run()
 
-    def inputCodeObject():
-        c = ''
-        i = raw_input('>>> ')
-        try:
-            codeObject = compile(i, '<input>', 'eval')
-            return codeObject
-        except:
-            try:
-                codeObject = compile(i, '<input>', 'exec')
-                return codeObject
-            except SyntaxError, e:
-                if not c and str(e).startswith('unexpected EOF'):
-                    c = i+'\n'
-                else:
-                    raise
-        while 1:
-            i = raw_input('... ')
-            if i:
-                c += '%s\n' % i
-            else:
-                break
-        return compile(c, '<input>', 'exec')
+    # def inputCodeObject():
+    #     c = ''
+    #     i = raw_input('>>> ')
+    #     try:
+    #         codeObject = compile(i, '<input>', 'eval')
+    #         return codeObject
+    #     except:
+    #         try:
+    #             codeObject = compile(i, '<input>', 'exec')
+    #             return codeObject
+    #         except SyntaxError, e:
+    #             if not c and str(e).startswith('unexpected EOF'):
+    #                 c = i+'\n'
+    #             else:
+    #                 raise
+    #     while 1:
+    #         i = raw_input('... ')
+    #         if i:
+    #             c += '%s\n' % i
+    #         else:
+    #             break
+    #     return compile(c, '<input>', 'exec')
             
     
     # while 1:
